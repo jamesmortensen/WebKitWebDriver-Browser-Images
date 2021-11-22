@@ -38,7 +38,7 @@ To run Selenium tests against the Epiphany browser, use the following configurat
 };
 ```
 
-The WebKitwebDriver package also comes bundled with MiniBrowser, a very lightweight build of WebKitGTK2. To run the tests against the WebKitGTK2 MiniBrowser, use the following capabilities:
+The WebKitWebDriver package also comes bundled with MiniBrowser, a very lightweight build of WebKitGTK2. To run the tests against the WebKitGTK2 MiniBrowser, use the following capabilities:
 
 ```
 capabilities: [{
@@ -87,3 +87,6 @@ docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile.epiphany -t
 ```
 
 
+## Find the container image on Docker Hub
+
+[https://hub.docker.com/repository/docker/jamesmortensen/webkitwebdriver-epiphany](https://hub.docker.com/repository/docker/jamesmortensen/webkitwebdriver-epiphany)
