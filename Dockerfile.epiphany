@@ -1,0 +1,158 @@
+FROM debian:latest
+
+#############################################################
+# image name: jamesmortensen/webkitwebdriver-epiphany:latest
+#
+# This image uses WebKitWebDriver to launch a webdriver
+# server listening on port 4444, with noVNC on port 7900
+#
+# It also includes the Epiphany Web browser, which uses the
+# same browser engine as Safari on macOS.
+#
+# - Epiphany 3.38.2 is equivalent to Safari 15.0
+# - Epiphany is built on top of WebKitGTK 2.34.1
+# - WebDriver command: /usr/bin/WebKitWebDriver -p 4444 --host=127.0.0.1
+# - http://localhost:4444/status
+#
+#############################################################
+
+
+USER root
+
+ARG SELUSER=seluser
+ARG SELUSER_PASS=seluser
+
+
+# Includes minimal tools
+RUN apt-get -qqy update \
+  && apt-get -qqy --no-install-recommends install \
+    ca-certificates \
+    sudo \
+    unzip \
+    wget \
+    jq \
+    curl \
+    supervisor \
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+
+# Create directories that will be needed in later steps
+RUN mkdir -p /opt/bin \
+ && mkdir -p /var/run/supervisor \
+ && mkdir -p /var/log/supervisor
+
+# Enable permissions
+RUN chmod 777 /var/log/supervisor \
+ && chmod 777 /var/run/supervisor
+
+
+# Add a non-root user
+RUN useradd $SELUSER \
+    && mkdir -p /home/$SELUSER \
+    && chown -v -R $SELUSER:$SELUSER /home/seluser \
+    && echo 'ALL ALL = (ALL) NOPASSWD: ALL' >> /etc/sudoers \
+    && echo $SELUSER:$SELUSER_PASS | chpasswd \
+    && usermod -aG sudo $SELUSER \
+    && bash -c 'cp -n /root/.bashrc /home/$SELUSER/ && chown $SELUSER:$SELUSER /home/$SELUSER/.bashrc && cp -n /root/.profile /home/$SELUSER/ && chown $SELUSER:$SELUSER /home/$SELUSER/.profile && chsh -s /bin/bash $SELUSER'
+
+
+#==============
+# Xvfb
+#==============
+RUN apt-get update -qqy \
+  && apt-get -qqy install \
+    xvfb \
+    pulseaudio \
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+#=====
+# VNC
+#=====
+RUN apt-get update -qqy \
+  && apt-get -qqy install \
+  x11vnc \
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+#=========
+# fluxbox
+# A fast, lightweight and responsive window manager
+#=========
+RUN apt-get update -qqy \
+  && apt-get -qqy install \
+    fluxbox \
+  && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+
+########################################
+# noVNC exposes VNC through a web page #
+########################################
+# Download https://github.com/novnc/noVNC dated 2021-03-30 commit 84f102d6a9ffaf3972693d59bad5c6fddb6d7fb0
+# Download https://github.com/novnc/websockify dated 2021-03-22 commit c5d365dd1dbfee89881f1c1c02a2ac64838d645f
+ENV NOVNC_SHA="84f102d6a9ffaf3972693d59bad5c6fddb6d7fb0" \
+    WEBSOCKIFY_SHA="c5d365dd1dbfee89881f1c1c02a2ac64838d645f"
+RUN  wget -nv -O noVNC.zip \
+       "https://github.com/novnc/noVNC/archive/${NOVNC_SHA}.zip" \
+  && unzip -x noVNC.zip \
+  && mv noVNC-${NOVNC_SHA} /opt/bin/noVNC \
+  && cp /opt/bin/noVNC/vnc.html /opt/bin/noVNC/index.html \
+  && rm noVNC.zip \
+  && wget -nv -O websockify.zip \
+      "https://github.com/novnc/websockify/archive/${WEBSOCKIFY_SHA}.zip" \
+  && unzip -x websockify.zip \
+  && rm websockify.zip \
+  && rm -rf websockify-${WEBSOCKIFY_SHA}/tests \
+  && mv websockify-${WEBSOCKIFY_SHA} /opt/bin/noVNC/utils/websockify
+
+# Copy Supervisor config files and entry point file
+COPY supervisord.conf /etc
+COPY services.conf /etc/supervisor/conf.d/
+COPY entry_point.sh /opt/bin/entry_point.sh
+
+#==============================
+# Generating the VNC password as seluser
+# So the service can be started with seluser
+#==============================
+RUN mkdir -p /home/$SELUSER/.vnc \
+  && x11vnc -storepasswd secret /home/$SELUSER/.vnc/passwd \
+  && chown -R $SELUSER:$SELUSER /home/$SELUSER/.vnc/passwd
+
+#==============================
+# Scripts to run fluxbox, x11vnc and noVNC, as well as xvfb
+#==============================
+COPY start-vnc.sh \
+      start-novnc.sh \
+      start-xvfb.sh \
+      /opt/bin/
+
+#============================
+# Some configuration options
+#============================
+ENV SCREEN_WIDTH 1360
+ENV SCREEN_HEIGHT 1020
+ENV SCREEN_DEPTH 24
+ENV SCREEN_DPI 96
+ENV DISPLAY :99.0
+ENV DISPLAY_NUM 99
+ENV START_XVFB true
+ENV START_NO_VNC true
+
+# Creating base directory for Xvfb
+RUN  sudo mkdir -p /tmp/.X11-unix && sudo chmod 1777 /tmp/.X11-unix
+
+## Install WebKitWebDriver
+RUN apt-get update -y && apt-get install -y webkit2gtk-driver \
+      && echo "alias l='ls -ltr'" >> /home/$SELUSER/.bashrc \
+      && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+## Install epiphany-browser
+RUN apt-get update -y && apt-get install -y epiphany-browser \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+## Install container image debugging tools
+# RUN apt-get update -y && apt-get install -y vim telnet procps \
+#     && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+# Start xvfb, VNC, noVNC and WebKitWebDriver, enabled to listen to all interfaces on port 4444
+CMD /opt/bin/entry_point.sh
+
+USER $SELUSER
