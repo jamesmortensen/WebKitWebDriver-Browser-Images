@@ -1,0 +1,1 @@
+These images are licensed under the [Apache License 2.0](https://raw.githubusercontent.com/SeleniumHQ/selenium/trunk/LICENSE). Some of the bash scripts are taken from the [SeleniumHQ docker-selenium](https://github.com/SeleniumHQ/docker-selenium) project.
