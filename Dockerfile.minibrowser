@@ -10,7 +10,7 @@ FROM debian:latest
 # same browser engine as Safari on macOS.
 #
 # - Epiphany 3.38.2 is equivalent to Safari 15.0
-# - Epiphany is built on top of WebKitGTK 2.34.1
+# - Epiphany is built on top of WebKitGTK 2.36.3
 # - WebDriver command: /usr/bin/WebKitWebDriver -p 4444 --host=127.0.0.1
 # - http://localhost:4444/status
 #
