@@ -10,7 +10,7 @@ FROM debian:latest
 # same browser engine as Safari on macOS.
 #
 # - Epiphany 3.38.2 is equivalent to Safari 15.0
-# - Epiphany is built on top of WebKitGTK 2.36.3
+# - Epiphany is built on top of WebKitGTK 2.38.0
 # - WebDriver command: /usr/bin/WebKitWebDriver -p 4444 --host=127.0.0.1
 # - http://localhost:4444/status
 #
@@ -143,6 +143,7 @@ RUN  sudo mkdir -p /tmp/.X11-unix && sudo chmod 1777 /tmp/.X11-unix
 ## Install WebKitWebDriver
 RUN apt-get update -y && apt-get install -y webkit2gtk-driver \
       && echo "alias l='ls -ltr'" >> /home/$SELUSER/.bashrc \
+      && echo "alias MiniBrowser='/usr/lib/`uname -m`-linux-gnu/webkit2gtk-4.0/MiniBrowser'" >> /home/$SELUSER/.bashrc \
       && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 ## Install container image debugging tools
