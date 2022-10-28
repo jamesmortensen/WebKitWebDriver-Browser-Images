@@ -90,6 +90,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ steps.tagging.outputs.release_tag }}
         run: |
+          RELEASE_TAG=${RELEASE_TAG/:/-}
           git tag v$RELEASE_TAG
           git push origin v$RELEASE_TAG
           echo "$RELEASE_TAG is published to Docker Hub at [$IMAGE_NAME](https://hub.docker.com/r/$IMAGE_NAME/tags)" > release_notes.md
