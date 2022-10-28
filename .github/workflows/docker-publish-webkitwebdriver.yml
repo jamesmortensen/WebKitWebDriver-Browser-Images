@@ -18,7 +18,7 @@ env:
   # Use docker.io for Docker Hub if empty
   # github.repository as <account>/<repo>
   REGISTRY: 'docker.io'
-  IMAGE_NAME: 'jamesmortensen1/webkitwebdriver-epiphany'
+  IMAGE_NAME: 'jamesmortensen/webkitwebdriver-epiphany'
 
 
 jobs:
