@@ -93,13 +93,15 @@ jobs:
         run: |
           git tag v$RELEASE_TAG
           git push origin v$RELEASE_TAG
-          MINIBROWSER_VERSION=`docker run --rm $IMAGE_NAME:latest bash -c "cd /opt/bin && bash entry_point.sh & sleep 5 && /usr/lib/*-linux-gnu/webkit2gtk-4.0/MiniBrowser --version" | tail -n 1`
-          EPIPHANY_VERSION=`run --rm $IMAGE_NAME:latest bash -c "epiphany --version" | tail -n 1
           echo "$RELEASE_TAG is published to Docker Hub at [$IMAGE_NAME](https://hub.docker.com/r/$IMAGE_NAME/tags) and contains the following resources: " > release_notes.md
           echo "" >> release_notes.md
+          MINIBROWSER_VERSION=`docker run --rm $IMAGE_NAME:latest bash -c "cd /opt/bin && bash entry_point.sh & sleep 5 && /usr/lib/*-linux-gnu/webkit2gtk-4.0/MiniBrowser --version" | tail -n 1`
           echo "MiniBrowser: $MINIBROWSER_VERSION" >> release_notes
           echo "WebKitWebDriver: $MINIBROWSER_VERSION" >> release_notes
-          echo "Epiphany: $EPIPHANY_VERSION" >> release_notes
+          if echo "$IMAGE_NAME" | grep -q "epiphany"; then
+              EPIPHANY_VERSION=`docker run --rm $IMAGE_NAME:latest bash -c "epiphany --version" | tail -n 1`
+              echo "Epiphany: $EPIPHANY_VERSION" >> release_notes
+          fi
           REPO=`echo $GITHUB_REPOSITORY | tr '/' '\n' | tail -n 1`
           go install github.com/github-release/github-release@v0.10.0
           echo "Set release notes"
